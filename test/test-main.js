@@ -2,16 +2,14 @@ var tests = Object.keys(window.__karma__.files).filter(function (file) {
       return /Spec\.js$/.test(file);
 });
 
-// var bootstrap = [[ 'test00', '{"callback":"function () {\\n\\n  var Test00 =  {\\n    test00: 0\\n  }\\n\\n  return Test00;\\n\\n}"}' ],
-// [ 'test02', '{"deps":["{\\"test02a\\":2}"],"callback":"function (Test02a) {\\n\\n  var Test02 = {\\n    test02: 2,\\n    test02a: Test02a\\n  };\\n\\n  return Test02;\\n\\n}"}' ]]
-// 
-// bootstrap.forEach(function(ls) {
-//   localStorage.setItem(ls[0], ls[1]);
-// });
+var bootstrap = [[ 'test00', '{"callback":"function () {\\n\\n  var Test00 =  {\\n    test00: 0\\n  }\\n\\n  return Test00;\\n\\n}"}' ],
+[ 'test02', '{"deps":["{\\"test02a\\":2}"],"callback":"function (Test02a) {\\n\\n  var Test02 = {\\n    test02: 2,\\n    test02a: Test02a\\n  };\\n\\n  return Test02;\\n\\n}"}' ]]
+
+bootstrap.forEach(function(ls) {
+  localStorage.setItem(ls[0], ls[1]);
+});
 
 tests.push("cloudLib");
-tests.push("test00");
-tests.push("test02");
 
 requirejs.config({
     // Karma serves files from '/base'
