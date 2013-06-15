@@ -10,6 +10,8 @@ var tests = Object.keys(window.__karma__.files).filter(function (file) {
 // });
 
 tests.push("cloudLib");
+tests.push("test00");
+tests.push("test02");
 
 requirejs.config({
     // Karma serves files from '/base'

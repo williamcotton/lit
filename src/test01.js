@@ -1,4 +1,4 @@
-define(["cloudlib!test00", "test00"], function(Test00) {
+define(["cloudlib!test00"], function(Test00) {
   
   var Test01 = {
     test01: 1,
