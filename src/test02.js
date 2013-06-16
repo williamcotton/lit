@@ -4,7 +4,7 @@ cloudLib({
 
   var Test02 = {
     test02: 2,
-    test02a: Test02a
+    test02a: Test02a.test02a
   };
 
   return Test02;

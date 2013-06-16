@@ -12,7 +12,7 @@ define([
     });
     
     it("should load from a cloudlib", function() {
-      expect(Test01.test00.test00).toBe(0);
+      expect(Test01.test00).toBe(0);
     });
     
   });
@@ -20,11 +20,11 @@ define([
   describe("cloudLib with dependencies", function() {
     
     it("should define a cloudLib with dependencies", function() {
-      expect(Test02.test02a.test02a).toBe(2);
+      expect(Test02.test02a).toBe(2);
     });
     
     it("should load from a cloudLib with dependencies", function() {
-      expect(Test03.test02.test02a.test02a).toBe(2);
+      expect(Test03.test02).toBe(2);
     });
     
   });

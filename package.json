@@ -4,7 +4,8 @@
   "devDependencies": {
     "bower": "*",
     "karma": "*",
-    "phantomjs": "*"
+    "phantomjs": "*",
+    "karma-phantomjs-launcher": "git://github.com/williamcotton/karma-phantomjs-launcher.git"
   },
   "scripts": {
      "test": "bower install && ./node_modules/.bin/karma start --single-run --browsers PhantomJS"

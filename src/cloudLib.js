@@ -1,28 +1,67 @@
 define("cloudlib", {
   load: function (name, req, onload, config) {
     
-    var cl = JSON.parse(localStorage.getItem(name));
-    var callback_string = cl.callback;
+    // left here for generating our localStorage bootstrapings
+    // console.log(localStorage.getItem(name));
     
-    var callback = eval("(" + callback_string + ")");
-    
-    var deps_json = cl.deps;
-    var deps = [];
-    
-    var initiated_callback;
-
-    if (deps_json) {
-      deps_json.forEach(function(dep_json) {
-        deps.push(JSON.parse(dep_json));
-      });
-      initiated_callback = callback.apply(this, deps);
+    var dataRequest = new XMLHttpRequest();
+    dataRequest.onload = function(request) {
+      
+      console.log("dataRequest response", request.target.response);
+      
+      var cl = JSON.parse(request.target.response);
+      
+      var callback_string = cl.callback;
+      
+      var callback = eval("(" + callback_string + ")");
+      
+      var deps_json = cl.deps;
+      var deps = [];
+      
+      var initiated_callback;
+      
+      if (deps_json) {
+        deps_json.forEach(function(dep_json) {
+          deps.push(JSON.parse(dep_json));
+        });
+        initiated_callback = callback.apply(this, deps);
+        onload(initiated_callback);
+      }
+      else {
+        initiated_callback = callback();
+      }
+      
       onload(initiated_callback);
-    }
-    else {
-      initiated_callback = callback();
-    }
+      
+    };
+    var url = "http://localhost:5000/cl/test/" + name;
+    console.log(url);
+    //dataRequest.withCredentials = true;
+    dataRequest.open("get", url, true);
+    dataRequest.send();
     
-    onload(initiated_callback);
+    //var cl = JSON.parse(localStorage.getItem(name));
+    // var callback_string = cl.callback;
+    // 
+    // var callback = eval("(" + callback_string + ")");
+    // 
+    // var deps_json = cl.deps;
+    // var deps = [];
+    // 
+    // var initiated_callback;
+    // 
+    // if (deps_json) {
+    //   deps_json.forEach(function(dep_json) {
+    //     deps.push(JSON.parse(dep_json));
+    //   });
+    //   initiated_callback = callback.apply(this, deps);
+    //   onload(initiated_callback);
+    // }
+    // else {
+    //   initiated_callback = callback();
+    // }
+    // 
+    // onload(initiated_callback);
     
   }
 });
