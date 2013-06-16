@@ -1,18 +1,10 @@
 define("cloudlib", {
   load: function (name, req, onload, config) {
     
-    // left here for generating our localStorage bootstrapings
-    // console.log(localStorage.getItem(name));
-    
-    var dataRequest = new XMLHttpRequest();
-    dataRequest.onload = function(request) {
-      
-      console.log("dataRequest response", request.target.response);
+    var evaluator = function(request) {
       
       var cl = JSON.parse(request.target.response);
-      
       var callback_string = cl.callback;
-      
       var callback = eval("(" + callback_string + ")");
       
       var deps_json = cl.deps;
@@ -34,34 +26,13 @@ define("cloudlib", {
       onload(initiated_callback);
       
     };
-    var url = "http://localhost:5000/cl/test/" + name;
-    console.log(url);
+    
+    var dataRequest = new XMLHttpRequest();
+    dataRequest.onload = evaluator;
+    var url = "http://lit-caverns-8396.herokuapp.com/cl/test/" + name;
     //dataRequest.withCredentials = true;
     dataRequest.open("get", url, true);
     dataRequest.send();
-    
-    //var cl = JSON.parse(localStorage.getItem(name));
-    // var callback_string = cl.callback;
-    // 
-    // var callback = eval("(" + callback_string + ")");
-    // 
-    // var deps_json = cl.deps;
-    // var deps = [];
-    // 
-    // var initiated_callback;
-    // 
-    // if (deps_json) {
-    //   deps_json.forEach(function(dep_json) {
-    //     deps.push(JSON.parse(dep_json));
-    //   });
-    //   initiated_callback = callback.apply(this, deps);
-    //   onload(initiated_callback);
-    // }
-    // else {
-    //   initiated_callback = callback();
-    // }
-    // 
-    // onload(initiated_callback);
     
   }
 });
