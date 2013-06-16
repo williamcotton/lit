@@ -30,6 +30,7 @@ define("cloudlib", {
     var dataRequest = new XMLHttpRequest();
     dataRequest.onload = evaluator;
     var url = "http://lit-caverns-8396.herokuapp.com/cl/test/" + name;
+    
     //dataRequest.withCredentials = true;
     dataRequest.open("get", url, true);
     dataRequest.send();
