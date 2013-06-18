@@ -1,5 +1,5 @@
-cloudLib
-========
+lit
+===
 
 A lightweight module repository.
 --------------------------------

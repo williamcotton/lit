@@ -13,7 +13,7 @@ files = [
   REQUIRE,
   REQUIRE_ADAPTER,
   
-  'src/cloudLib.js',
+  'src/lit.js',
   
   {pattern: 'test/**/*Spec.js', included: false},
   {pattern: 'lib/**/*.js', included: false},

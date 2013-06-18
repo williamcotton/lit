@@ -1,4 +1,4 @@
-cloudLib({
+lit({
   name: "test02"
 }, ["test02a"], function(Test02a) {
 

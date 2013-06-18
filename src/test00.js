@@ -1,4 +1,4 @@
-cloudLib({
+lit({
   name: "test00"
 }, function() {
 

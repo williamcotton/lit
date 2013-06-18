@@ -2,7 +2,7 @@
   
   var hostname = "http://lit-caverns-8396.herokuapp.com";
   
-  define("cloudlib", {
+  define("lit", {
     load: function (name, req, onload, config) {
 
       var evaluator = function(request) {
@@ -42,11 +42,11 @@
     }
   });
 
-  var cloudLib = function(package_definition, name, deps, callback) {
+  var lit = function(package_definition, name, deps, callback) {
 
     if (typeof name !== 'string' && !!deps) {
       // we need a name, due to issues with anonymously defined modules in requireJS
-      // which is fine, because cloudLib's need a name as well!
+      // which is fine, because lit's need a name as well!
       define(package_definition.name, name, deps);
     }
     else {
@@ -66,7 +66,7 @@
         deps = null;
     }
 
-    var storeCloudLib = function(name, cl_string) {
+    var storelit = function(name, cl_string) {
 
       var data = new FormData();
       data.append('name', name);
@@ -92,7 +92,7 @@
           deps: string_deps,
           callback: callback.toString()
         };
-        storeCloudLib(package_definition.name, JSON.stringify(cl));
+        storelit(package_definition.name, JSON.stringify(cl));
       };
 
       // right now this only has one level of dependencies... it needs to search for deps recursively at some point
@@ -115,11 +115,11 @@
       var cl = {
         callback: callback.toString()
       };
-      storeCloudLib(package_definition.name, JSON.stringify(cl));
+      storelit(package_definition.name, JSON.stringify(cl));
     }
 
   };
   
-  root.cloudLib = cloudLib;
+  root.lit = lit;
   
 })(this);

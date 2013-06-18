@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge, chrome=1" />
+    <title>lit</title>
+  
+  </head>
+
+  <body>
+    
+    <script src="../lib/requirejs/require.js"></script>
+    <script src="../src/lit.js"></script>
+    
+    <script type="text/javascript" charset="utf-8">
+    
+      require(["lit!test99"], function(Test99) {
+        console.log(Test99);
+      });
+      
+    </script>
+      
+  </body>
+
+</html>

@@ -1,5 +1,5 @@
 {
-  "name": "cloudLib",
+  "name": "lit",
   "version": "0.0.1",
   "devDependencies": {
     "bower": "*",

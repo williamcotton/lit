@@ -1,7 +1,7 @@
 {
-	"name": "cloudLib",
+	"name": "lit",
 	"version": "0.0.1",
-	"main": "src/cloudLib.js",
+	"main": "src/lit.js",
 	"dependencies": {
 	  "requirejs": "*"
 	}

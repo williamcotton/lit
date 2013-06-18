@@ -5,25 +5,25 @@ define([
   "test03"
 ], function(Test00, Test01, Test02, Test03) {
   
-  describe("cloudLib", function() {
+  describe("lit", function() {
     
-    it("should define a cloudLib", function() {
+    it("should define a lit", function() {
       expect(Test00.test00).toBe(0);
     });
     
-    it("should load from a cloudlib", function() {
+    it("should load from a lit", function() {
       expect(Test01.test00).toBe(0);
     });
     
   });
   
-  describe("cloudLib with dependencies", function() {
+  describe("lit with dependencies", function() {
     
-    it("should define a cloudLib with dependencies", function() {
+    it("should define a lit with dependencies", function() {
       expect(Test02.test02a).toBe(2);
     });
     
-    it("should load from a cloudLib with dependencies", function() {
+    it("should load from a lit with dependencies", function() {
       expect(Test03.test02).toBe(2);
     });
     
