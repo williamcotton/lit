@@ -15,25 +15,45 @@
 
         var lit_pack = JSON.parse(request.target.response);
         var callback_string = lit_pack.callback;
-        var callback = eval("(" + callback_string + ")");
+        
+        /*
+        
+        For right now it just uses eval instead of say, the RequireJS script loading approach.
+        This will probably change.
+        
+        The three newlines ("\n\n\n") that you see below are to get the lines numbers to match
+        the source code editor.
+        
+        */
+        
+        var sourceMap = "//# sourceURL=" + name;
+        var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap);
+        // EVAL IS EVIL!
+        
 
         var deps_json = lit_pack.deps;
         var deps = [];
 
         var initiated_callback;
 
+        
         if (deps_json) {
           deps_json.forEach(function(dep_json) {
             deps.push(JSON.parse(dep_json));
           });
-          initiated_callback = callback.apply(this, deps);
-          onload(initiated_callback);
         }
         else {
-          initiated_callback = callback();
+          deps = [];
         }
-
-        onload(initiated_callback);
+        
+        //try { 
+          initiated_callback = callback.apply(this, deps);
+          onload(initiated_callback);
+        //}
+        //catch(err) {
+          // tie this in to the source code editor somehow...
+        //  console.log(err.stack);
+        //}
 
       };
 
