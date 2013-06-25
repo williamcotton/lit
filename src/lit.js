@@ -1,7 +1,6 @@
 (function(root) {
   
   var hostname = "http://lit-caverns-8396.herokuapp.com";
-  var hostname = "http://localhost:5000";
   
   define("lit", {
     load: function (name, req, onload, config) {
