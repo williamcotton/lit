@@ -2,6 +2,12 @@
   
   var hostname = "http://lit-caverns-8396.herokuapp.com";
   
+  if (window.location.hostname == "localhost") {
+    hostname = "http://localhost:" + 5000;
+  }
+  
+  root.LIT_HOSTNAME = hostname;
+  
   define("lit", {
     load: function (name, req, onload, config) {
 
