@@ -1,17 +1,18 @@
 (function(root) {
   
   var hostname = "http://lit-caverns-8396.herokuapp.com";
+  var hostname = "http://localhost:5000";
   
   define("lit", {
     load: function (name, req, onload, config) {
 
       var evaluator = function(request) {
 
-        var cl = JSON.parse(request.target.response);
-        var callback_string = cl.callback;
+        var lit_pack = JSON.parse(request.target.response);
+        var callback_string = lit_pack.callback;
         var callback = eval("(" + callback_string + ")");
 
-        var deps_json = cl.deps;
+        var deps_json = lit_pack.deps;
         var deps = [];
 
         var initiated_callback;
@@ -33,7 +34,7 @@
 
       var dataRequest = new XMLHttpRequest();
       dataRequest.onload = evaluator;
-      var url = hostname + "/cl/" + name;
+      var url = hostname + "/v0/" + name;
 
       //dataRequest.withCredentials = true;
       dataRequest.open("get", url, true);
@@ -66,21 +67,21 @@
         deps = null;
     }
 
-    var storelit = function(name, cl_string) {
+    var storelit = function(name, lit_pack_json) {
 
       var data = new FormData();
       data.append('name', name);
-      data.append('cl_string', cl_string);
+      data.append('lit_pack_json', lit_pack_json);
 
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', hostname + "/cl", true);
+      xhr.open('POST', hostname + "/v0", true);
       xhr.onload = function () {
           // do something to response
           console.log(this.responseText);
       };
       xhr.send(data);
 
-    }
+    };
 
     if (deps && deps.length) {
 
@@ -88,11 +89,12 @@
       var string_deps = [];
 
       var store = function() {
-        var cl = {
+        var lit_pack = {
+          package_definition: JSON.stringify(package_definition),
           deps: string_deps,
           callback: callback.toString()
         };
-        storelit(package_definition.name, JSON.stringify(cl));
+        storelit(package_definition.name, JSON.stringify(lit_pack));
       };
 
       // right now this only has one level of dependencies... it needs to search for deps recursively at some point
@@ -112,10 +114,11 @@
 
     }
     else {
-      var cl = {
+      var lit_pack = {
+        package_definition: JSON.stringify(package_definition),
         callback: callback.toString()
       };
-      storelit(package_definition.name, JSON.stringify(cl));
+      storelit(package_definition.name, JSON.stringify(lit_pack));
     }
 
   };
