@@ -19,7 +19,7 @@
         /*
         
         For right now it just uses eval instead of say, the RequireJS script loading approach.
-        This will probably change.
+        This will probably change, I'm just trying to only solve problems when they need to be solved
         
         The three newlines ("\n\n\n") that you see below are to get the lines numbers to match
         the source code editor.
