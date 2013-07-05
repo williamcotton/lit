@@ -1,9 +1,11 @@
 (function(root) {
   
   var hostname = "http://lit-caverns-8396.herokuapp.com";
+  var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
   if (window.location.hostname == "localhost") {
     hostname = "http://localhost:" + 5000;
+    GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
   }
   
   root.LIT_HOSTNAME = hostname;
@@ -78,7 +80,7 @@
     login_button.addEventListener("click", function() {
       window.open('https://github.com' + 
         '/login/oauth/authorize' + 
-        '?client_id=f497d63f8657e29d73cc' +
+        '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
         '&scope=gist');
     });
 
