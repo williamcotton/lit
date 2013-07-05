@@ -61,9 +61,10 @@
 
       var dataRequest = new XMLHttpRequest();
       dataRequest.onload = evaluator;
+      
       var url = hostname + "/v0/" + name;
 
-      //dataRequest.withCredentials = true;
+      dataRequest.withCredentials = true;
       dataRequest.open("get", url, true);
       dataRequest.send();
 
@@ -85,7 +86,7 @@
     });
 
     window.addEventListener('message', function (event) {
-    	var code = event.data;
+      var code = event.data;
       var loginRequest = new XMLHttpRequest();
       loginRequest.open("get", '/oauth_token?code=' + code, true);
       loginRequest.onload = function(request) {
@@ -216,8 +217,6 @@
       return aKeys;
     }
   };
-  
-  console.log(docCookies.getItem("lit!username"));
   
   litLogin();
   
