@@ -1,14 +1,16 @@
 (function(root) {
   
-  var hostname = "http://www.corslit.com";
+  var hostname = "www.corslit.com";
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
-  if (window.location.hostname == "localhost") {
-    hostname = "http://localhost:" + 5000;
+  if (window.location.hostname == "localhost" || LIT_DEV) {
+    hostname = "localhost:" + 5000;
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
   }
   
-  root.LIT_HOSTNAME = hostname;
+  var host_url = "http://" + hostname;
+  
+  root.LIT_HOSTNAME = host_url;
   
   define("lit", {
     load: function (name, req, onload, config) {
@@ -62,9 +64,9 @@
       var dataRequest = new XMLHttpRequest();
       dataRequest.onload = evaluator;
       
-      var url = hostname + "/v0/" + name;
+      var url = host_url + "/v0/" + name;
 
-      //dataRequest.withCredentials = true;
+      dataRequest.withCredentials = true;
       dataRequest.open("get", url, true);
       dataRequest.send();
 
@@ -77,23 +79,51 @@
     login_button.classList.add("login");
 
     document.body.appendChild(login_button);
-
-    login_button.addEventListener("click", function() {
-      window.open('https://github.com' + 
-        '/login/oauth/authorize' + 
-        '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
-        '&scope=gist');
-    });
-
-    window.addEventListener('message', function (event) {
-      var code = event.data;
+    
+    var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
+    
+    var loginWithCode = function(code) {
       var loginRequest = new XMLHttpRequest();
-      loginRequest.open("get", '/oauth_token?code=' + code, true);
+      loginRequest.open("get", host_url + '/oauth_token?code=' + code, true);
       loginRequest.onload = function(request) {
         var github_details = JSON.parse(request.target.response);
         console.log(github_details);
       };
+      loginRequest.withCredentials = true;
       loginRequest.send();
+    }
+    
+    login_button.addEventListener("click", function() {
+      window.open('https://github.com' + 
+        '/login/oauth/authorize' + 
+        '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
+        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
+        '&scope=gist');
+      //
+      
+      if (window.location.host == hostname) {
+        // if it's the same origin, we use the window.postMessage approach
+        window.addEventListener('message', function (event) {
+          var code = event.data;
+          loginWithCode(code);
+        });
+      }
+      else {
+        // if it's cross origin, we poll the host
+        var pollInterval = setInterval(function() {
+          var pollRequest = new XMLHttpRequest();
+          pollRequest.open("get", host_url + '/oauth_poll/' + secret_oauth_lookup, true);
+          pollRequest.onload = function(request) {
+            var code = request.target.response;
+            if (code) {
+              loginWithCode(code);
+              clearInterval(pollInterval);
+            }
+          };
+          pollRequest.withCredentials = true;
+          pollRequest.send();
+        }, 1000);
+      }
     });
     
   };
@@ -129,11 +159,14 @@
       data.append('lit_pack_json', lit_pack_json);
 
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', hostname + "/v0", true);
+      xhr.open('POST', host_url + "/v0", true);
       xhr.onload = function () {
-          // do something to response
-          console.log(this.responseText);
+        console.log(this.responseText);
       };
+      xhr.onerror = function(error) {
+        console.log(error, this);
+      };
+      xhr.withCredentials = true;
       xhr.send(data);
 
     };
