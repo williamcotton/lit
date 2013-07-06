@@ -1,4 +1,4 @@
-define(["lit!test04"], function(Test04) {
+define(["lit!test/test04"], function(Test04) {
   
   var Test05 = {
     test04: Test04()
