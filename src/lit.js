@@ -3,7 +3,7 @@
   var hostname = "www.corslit.com";
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
-  if (window.location.hostname == "localhost" || LIT_DEV) {
+  if (window.location.hostname == "localhost" || typeof(LIT_DEV) != "undefined") {
     hostname = "localhost:" + 5000;
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
   }
