@@ -91,7 +91,7 @@
       };
       loginRequest.withCredentials = true;
       loginRequest.send();
-    }
+    };
     
     login_button.addEventListener("click", function() {
       window.open('https://github.com' + 
@@ -122,7 +122,7 @@
           };
           pollRequest.withCredentials = true;
           pollRequest.send();
-        }, 1000);
+        }, 500);
       }
     });
     
@@ -209,6 +209,38 @@
       storelit(package_definition.name, JSON.stringify(lit_pack));
     }
 
+  };
+  
+  lit.test = function(test_definition, callback) {
+    
+    var storeLitTest = function(path, lit_test_pack_json) {
+
+      var data = new FormData();
+      data.append('path', path);
+      data.append('lit_test_pack_json', lit_test_pack_json);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', host_url + "/v0/test", true);
+      xhr.onload = function () {
+        console.log(this.responseText);
+      };
+      xhr.onerror = function(error) {
+        console.log(error, this);
+      };
+      xhr.withCredentials = true;
+      xhr.send(data);
+
+    };
+    
+    require(["lit!" + test_definition.path], callback);
+    
+    var lit_test_pack = {
+      test_definition: JSON.stringify(test_definition),
+      callback: callback.toString()
+    };
+    
+    storeLitTest(test_definition.path, JSON.stringify(lit_test_pack));
+    
   };
   
   root.lit = lit;
