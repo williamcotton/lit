@@ -213,6 +213,8 @@
   
   lit.test = function(test_definition, callback) {
     
+    var litName = test_definition.for;
+    
     var storeLitTest = function(path, lit_test_pack_json) {
 
       var data = new FormData();
@@ -232,14 +234,14 @@
 
     };
     
-    require(["lit!" + test_definition.path], callback);
+    require(["lit!" + litName], callback);
     
     var lit_test_pack = {
       test_definition: JSON.stringify(test_definition),
       callback: callback.toString()
     };
     
-    storeLitTest(test_definition.path, JSON.stringify(lit_test_pack));
+    storeLitTest(litName, JSON.stringify(lit_test_pack));
     
   };
   
