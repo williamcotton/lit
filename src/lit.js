@@ -12,6 +12,19 @@
   
   root.LIT_HOSTNAME = host_url;
   
+  var pollUrl = function(url, success, failure) {
+    var pollInterval = setInterval(function() {
+      var pollRequest = new XMLHttpRequest();
+      pollRequest.open("get", url, true);
+      pollRequest.onload = function(request) {
+        success(request);
+        clearInterval(pollInterval);
+      };
+      pollRequest.withCredentials = true;
+      pollRequest.send();
+    }, 500);
+  };
+  
   define("lit", {
     load: function (name, req, onload, config) {
 
@@ -77,7 +90,6 @@
     
     var login_button = document.createElement("div");
     login_button.classList.add("login");
-
     document.body.appendChild(login_button);
     
     var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
@@ -93,37 +105,42 @@
       loginRequest.send();
     };
     
-    login_button.addEventListener("click", function() {
+    var pollForOAuthCode = function() {
+      pollUrl(host_url + '/oauth_poll/' + secret_oauth_lookup, function(request) {
+        var code = request.target.response;
+        if (code) {
+          loginWithCode(code);
+        }
+      });
+    };
+    
+    var listenForWindowMessage = function() {
+      window.addEventListener('message', function (event) {
+        var code = event.data;
+        loginWithCode(code);
+      });
+    };
+    
+    var openGithubOAuthWindow = function() {
       window.open('https://github.com' + 
         '/login/oauth/authorize' + 
         '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
         '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
         '&scope=gist');
-      //
-      
+    };
+    
+    var authorizeWithGithub = function() {
+      openGithubOAuthWindow();
       if (window.location.host == hostname) {
-        // if it's the same origin, we use the window.postMessage approach
-        window.addEventListener('message', function (event) {
-          var code = event.data;
-          loginWithCode(code);
-        });
+        listenForWindowMessage();
       }
       else {
-        // if it's cross origin, we poll the host
-        var pollInterval = setInterval(function() {
-          var pollRequest = new XMLHttpRequest();
-          pollRequest.open("get", host_url + '/oauth_poll/' + secret_oauth_lookup, true);
-          pollRequest.onload = function(request) {
-            var code = request.target.response;
-            if (code) {
-              loginWithCode(code);
-              clearInterval(pollInterval);
-            }
-          };
-          pollRequest.withCredentials = true;
-          pollRequest.send();
-        }, 500);
+        pollForOAuthCode();
       }
+    }
+    
+    login_button.addEventListener("click", function() {
+      authorizeWithGithub();
     });
     
   };
