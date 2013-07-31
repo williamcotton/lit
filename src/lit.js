@@ -29,6 +29,8 @@
     load: function (name, req, onload, config) {
 
       var evaluator = function(request) {
+        
+        //console.log(request.target.response);
 
         var lit_pack = JSON.parse(request.target.response);
         var callback_string = lit_pack.callback;
@@ -64,6 +66,7 @@
         }
         
         //try { 
+          
           initiated_callback = callback.apply(this, deps);
           onload(initiated_callback);
         //}
@@ -230,35 +233,21 @@
   
   lit.test = function(test_definition, callback) {
     
-    var litName = test_definition.for;
+    var litName;
+    if (test_definition["for"].indexOf("/") > -1) {
+      litName = test_definition["for"].split("/")[1];
+    }
+    else {
+      litName = test_definition["for"];
+    }
     
-    var storeLitTest = function(path, lit_test_pack_json) {
-
-      var data = new FormData();
-      data.append('path', path);
-      data.append('lit_test_pack_json', lit_test_pack_json);
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', host_url + "/v0/test", true);
-      xhr.onload = function () {
-        console.log(this.responseText);
-      };
-      xhr.onerror = function(error) {
-        console.log(error, this);
-      };
-      xhr.withCredentials = true;
-      xhr.send(data);
-
-    };
+    var testName = litName + "-test";
     
-    require(["lit!" + litName], callback);
+    lit({name: testName}, [], callback);
     
-    var lit_test_pack = {
-      test_definition: JSON.stringify(test_definition),
-      callback: callback.toString()
-    };
+    var pathName = window.location.pathname.split("/")[1] + "/" + litName;
     
-    storeLitTest(litName, JSON.stringify(lit_test_pack));
+    require(["lit!" + pathName], callback);
     
   };
   
