@@ -29,52 +29,21 @@
     load: function (name, req, onload, config) {
 
       var evaluator = function(request) {
-        
-        //console.log(request.target.response);
 
         var lit_pack = JSON.parse(request.target.response);
         var callback_string = lit_pack.callback;
         
-        /*
-        
-        For right now it just uses eval instead of say, the RequireJS script loading approach.
-        This will probably change, I'm just trying to only solve problems when they need to be solved
-        
-        The three newlines ("\n\n\n") that you see below are to get the lines numbers to match
-        the source code editor.
-        
-        */
-        
         var sourceMap = "//# sourceURL=" + name;
-        var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap);
-        // EVAL IS EVIL!
+        var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
         
-
-        var deps_json = lit_pack.deps;
-        var deps = [];
-
+        var deps = lit_pack.deps;
         var initiated_callback;
-
         
-        if (deps_json) {
-          deps_json.forEach(function(dep_json) {
-            deps.push(JSON.parse(dep_json));
-          });
-        }
-        else {
-          deps = [];
-        }
-        
-        //try { 
-          
-          initiated_callback = callback.apply(this, deps);
+        require(deps, function() {
+          initiated_callback = callback.apply(this, arguments);
           onload(initiated_callback);
-        //}
-        //catch(err) {
-          // tie this in to the source code editor somehow...
-        //  console.log(err.stack);
-        //}
-
+        });
+        
       };
 
       var dataRequest = new XMLHttpRequest();
@@ -89,7 +58,7 @@
     }
   });
   
-  var litLogin = function() {
+  var initializeLitLogin = function() {
     
     var login_button = document.createElement("div");
     login_button.classList.add("login");
@@ -102,7 +71,6 @@
       loginRequest.open("get", host_url + '/oauth_token?code=' + code, true);
       loginRequest.onload = function(request) {
         var github_details = JSON.parse(request.target.response);
-        console.log(github_details);
       };
       loginRequest.withCredentials = true;
       loginRequest.send();
@@ -140,7 +108,7 @@
       else {
         pollForOAuthCode();
       }
-    }
+    };
     
     login_button.addEventListener("click", function() {
       authorizeWithGithub();
@@ -181,53 +149,22 @@
       var xhr = new XMLHttpRequest();
       xhr.open('POST', host_url + "/v0", true);
       xhr.onload = function () {
-        console.log(this.responseText);
+        //console.log(this.responseText);
       };
       xhr.onerror = function(error) {
-        console.log(error, this);
+        //console.log(error, this);
       };
       xhr.withCredentials = true;
       xhr.send(data);
 
     };
 
-    if (deps && deps.length) {
-
-      var dep_count = deps.length;
-      var string_deps = [];
-
-      var store = function() {
-        var lit_pack = {
-          package_definition: JSON.stringify(package_definition),
-          deps: string_deps,
-          callback: callback.toString()
-        };
-        storelit(package_definition.name, JSON.stringify(lit_pack));
-      };
-
-      // right now this only has one level of dependencies... it needs to search for deps recursively at some point
-      deps.forEach(function(dep) {
-        require([dep], function(m) {
-
-          dep_count--;
-          m_s = typeof(m) == "function" ? m.toString() : JSON.stringify(m);
-
-          string_deps.push(m_s);
-
-          if (dep_count === 0) {
-            store();
-          }
-        });
-      });
-
-    }
-    else {
-      var lit_pack = {
-        package_definition: JSON.stringify(package_definition),
-        callback: callback.toString()
-      };
-      storelit(package_definition.name, JSON.stringify(lit_pack));
-    }
+    var lit_pack = {
+      package_definition: JSON.stringify(package_definition),
+      deps: deps,
+      callback: callback.toString()
+    };
+    storelit(package_definition.name, JSON.stringify(lit_pack));
 
   };
   
@@ -253,6 +190,6 @@
   
   root.lit = lit;
   
-  litLogin();
+  initializeLitLogin();
   
 })(this);
