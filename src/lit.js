@@ -3,7 +3,7 @@
   var hostname = "www.corslit.com";
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
-  if (window.location.hostname == "localhost" || typeof(LIT_DEV) != "undefined") {
+  if (typeof(LIT_DEV) != "undefined") {
     hostname = "localhost:" + 5000;
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
   }
@@ -27,34 +27,22 @@
   
   define("lit", {
     load: function (name, req, onload, config) {
-
-      var evaluator = function(request) {
-
+      var dataRequest = new XMLHttpRequest();
+      dataRequest.onload = function(request) {
         var lit_pack = JSON.parse(request.target.response);
         var callback_string = lit_pack.callback;
-        
         var sourceMap = "//# sourceURL=" + name;
         var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
-        
         var deps = lit_pack.deps;
-        var initiated_callback;
-        
         require(deps, function() {
-          initiated_callback = callback.apply(this, arguments);
+          var initiated_callback = callback.apply(this, arguments);
           onload(initiated_callback);
         });
-        
       };
-
-      var dataRequest = new XMLHttpRequest();
-      dataRequest.onload = evaluator;
-      
       var url = host_url + "/v0/" + name;
-
       dataRequest.withCredentials = true;
       dataRequest.open("get", url, true);
       dataRequest.send();
-
     }
   });
   
