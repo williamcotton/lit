@@ -46,11 +46,25 @@
     }
   });
   
-  var initializeLitLogin = function() {
+  var initializeLitLighter = function() {
     
-    var login_button = document.createElement("div");
-    login_button.classList.add("login");
-    document.body.appendChild(login_button);
+    var styles = document.createElement("link");
+    styles.href = "http://localhost:5000/styles/lighter.css";
+    styles.type = "text/css";
+    styles.rel = "stylesheet";
+    document.head.appendChild(styles);
+    
+    var lighter_container = document.createElement("div");
+    lighter_container.classList.add("lighter-container");
+    document.body.appendChild(lighter_container);
+    
+    var authorize_button = document.createElement("div");
+    authorize_button.classList.add("login");
+    lighter_container.appendChild(authorize_button);
+    
+    var status_display = document.createElement("div");
+    status_display.classList.add("status");
+    lighter_container.appendChild(status_display);
     
     var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
     
@@ -59,6 +73,8 @@
       loginRequest.open("get", host_url + '/oauth_token?code=' + code, true);
       loginRequest.onload = function(request) {
         var github_details = JSON.parse(request.target.response);
+        console.log(github_details);
+        lighter_container.classList.add("logged-in");
       };
       loginRequest.withCredentials = true;
       loginRequest.send();
@@ -98,7 +114,7 @@
       }
     };
     
-    login_button.addEventListener("click", function() {
+    authorize_button.addEventListener("click", function() {
       authorizeWithGithub();
     });
     
@@ -178,6 +194,6 @@
   
   root.lit = lit;
   
-  initializeLitLogin();
+  initializeLitLighter();
   
 })(this);
