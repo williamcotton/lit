@@ -3,6 +3,22 @@
   var hostname = "www.corslit.com";
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
+  var published = [];
+  var errors = [];
+  
+  var username = function() {
+    var return_val;
+    document.cookie.split(";").forEach(function(c) { 
+      var cookie = c.replace(" ","").split("=");
+      var key = cookie[0];
+      var val = cookie[1];
+      if (key == "lit!username") {
+        return_val = val;
+      }
+    });
+    return return_val;
+  };
+  
   if (typeof(LIT_DEV) != "undefined") {
     hostname = "localhost:" + 5000;
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
@@ -46,16 +62,22 @@
     }
   });
   
-  var initializeLitLighter = function() {
-    
+  var appendStyleSheet = function(url) {
     var styles = document.createElement("link");
-    styles.href = "http://localhost:5000/styles/lighter.css";
+    styles.href = url;
     styles.type = "text/css";
     styles.rel = "stylesheet";
     document.head.appendChild(styles);
+  };
+  
+  var litLighter = function() {
+    
+    appendStyleSheet(host_url + "/styles/lighter.css");
+    appendStyleSheet(host_url + "/styles/cleanslate.css");
     
     var lighter_container = document.createElement("div");
     lighter_container.classList.add("lighter-container");
+    lighter_container.classList.add("cleanslate");
     document.body.appendChild(lighter_container);
     
     var authorize_button = document.createElement("div");
@@ -73,7 +95,7 @@
       loginRequest.open("get", host_url + '/oauth_token?code=' + code, true);
       loginRequest.onload = function(request) {
         var github_details = JSON.parse(request.target.response);
-        console.log(github_details);
+        //console.log(github_details);
         lighter_container.classList.add("logged-in");
       };
       loginRequest.withCredentials = true;
@@ -121,6 +143,23 @@
   };
 
   var lit = function(package_definition, name, deps, callback) {
+    
+    if (typeof(package_definition) == "string") {
+      return require("lit!" + package_definition);
+    }
+    
+    if (package_definition.length > 0) {
+      deps = package_definition;
+      callback = name;
+      var new_deps = [];
+      deps.forEach(function(d) {
+        if (d.indexOf("/") == -1) {
+          d = username() + "/" + d;
+        }
+        new_deps.push("lit!" + d);
+      });
+      return require(new_deps, callback);
+    }
 
     if (typeof name !== 'string' && !!deps) {
       // we need a name, due to issues with anonymously defined modules in requireJS
@@ -152,11 +191,11 @@
 
       var xhr = new XMLHttpRequest();
       xhr.open('POST', host_url + "/v0", true);
-      xhr.onload = function () {
-        //console.log(this.responseText);
+      xhr.onload = function (res) {
+        published.push(res.target.response);
       };
       xhr.onerror = function(error) {
-        //console.log(error, this);
+        errors.push(error);
       };
       xhr.withCredentials = true;
       xhr.send(data);
@@ -169,6 +208,16 @@
       callback: callback.toString()
     };
     storelit(package_definition.name, JSON.stringify(lit_pack));
+    
+    var initiated_callback;
+    
+    require(deps, function() {
+      initiated_callback = callback.apply(this, arguments);
+    });
+    
+    return function() {
+      return initiated_callback;
+    };
 
   };
   
@@ -192,8 +241,11 @@
     
   };
   
+  lit.published = published;
+  lit.errors = errors;
+  
   root.lit = lit;
   
-  initializeLitLighter();
+  litLighter();
   
 })(this);
