@@ -70,12 +70,13 @@
     document.head.appendChild(styles);
   };
   
+  var lighter_container;
   var litLighter = function() {
     
     appendStyleSheet(host_url + "/styles/lighter.css");
     appendStyleSheet(host_url + "/styles/cleanslate.css");
     
-    var lighter_container = document.createElement("div");
+    lighter_container = document.createElement("div");
     lighter_container.classList.add("lighter-container");
     lighter_container.classList.add("cleanslate");
     document.body.appendChild(lighter_container);
@@ -243,6 +244,10 @@
   
   lit.published = published;
   lit.errors = errors;
+  
+  lit.hide = function() {
+    lighter_container.style.display = 'none';
+  }
   
   root.lit = lit;
   
