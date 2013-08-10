@@ -4,6 +4,7 @@
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
   var published = [];
+  var status = [];
   var errors = [];
   
   var username = function() {
@@ -70,6 +71,66 @@
     document.head.appendChild(styles);
   };
   
+  var login = function() {
+    
+    var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
+
+    var loginWithCode = function(code) {
+      var url = host_url + '/oauth_token?code=' + code;
+      status.push({xhr:url});
+      var loginRequest = new XMLHttpRequest();
+      loginRequest.open("get", url, true);
+      loginRequest.onload = function(request) {
+        var github_details = JSON.parse(request.target.response);
+        status.push({github_details:github_details});
+        lighter_container.classList.add("logged-in");
+      };
+      loginRequest.withCredentials = true;
+      loginRequest.send();
+    };
+
+    var pollForOAuthCode = function() {
+      var url = host_url + '/oauth_poll/' + secret_oauth_lookup;
+      status.push({poll_url:url});
+      pollUrl(url, function(request) {
+        var code = request.target.response;
+        if (code) {
+          loginWithCode(code);
+        }
+      });
+    };
+
+    var listenForWindowMessage = function() {
+      window.addEventListener('message', function (event) {
+        var code = event.data;
+        loginWithCode(code);
+      });
+    };
+
+    var openGithubOAuthWindow = function() {
+      var url = 'https://github.com' + 
+        '/login/oauth/authorize' + 
+        '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
+        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
+        '&scope=gist';
+      status.push({window_open:url});
+      window.open(url);
+    };
+
+    var authorizeWithGithub = function() {
+      openGithubOAuthWindow();
+      if (window.location.host == hostname) {
+        listenForWindowMessage();
+      }
+      else {
+        pollForOAuthCode();
+      }
+    };
+    
+    authorizeWithGithub();
+    
+  }
+  
   var lighter_container;
   var litLighter = function() {
     
@@ -89,56 +150,8 @@
     status_display.classList.add("status");
     lighter_container.appendChild(status_display);
     
-    var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
-    
-    var loginWithCode = function(code) {
-      var loginRequest = new XMLHttpRequest();
-      loginRequest.open("get", host_url + '/oauth_token?code=' + code, true);
-      loginRequest.onload = function(request) {
-        var github_details = JSON.parse(request.target.response);
-        //console.log(github_details);
-        lighter_container.classList.add("logged-in");
-      };
-      loginRequest.withCredentials = true;
-      loginRequest.send();
-    };
-    
-    var pollForOAuthCode = function() {
-      pollUrl(host_url + '/oauth_poll/' + secret_oauth_lookup, function(request) {
-        var code = request.target.response;
-        if (code) {
-          loginWithCode(code);
-        }
-      });
-    };
-    
-    var listenForWindowMessage = function() {
-      window.addEventListener('message', function (event) {
-        var code = event.data;
-        loginWithCode(code);
-      });
-    };
-    
-    var openGithubOAuthWindow = function() {
-      window.open('https://github.com' + 
-        '/login/oauth/authorize' + 
-        '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
-        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
-        '&scope=gist');
-    };
-    
-    var authorizeWithGithub = function() {
-      openGithubOAuthWindow();
-      if (window.location.host == hostname) {
-        listenForWindowMessage();
-      }
-      else {
-        pollForOAuthCode();
-      }
-    };
-    
     authorize_button.addEventListener("click", function() {
-      authorizeWithGithub();
+      lit.login();
     });
     
   };
@@ -243,7 +256,10 @@
   };
   
   lit.published = published;
+  lit.status = status;
   lit.errors = errors;
+  
+  lit.login = login;
   
   lit.hide = function() {
     lighter_container.style.display = 'none';
