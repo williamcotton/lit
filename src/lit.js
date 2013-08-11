@@ -129,7 +129,7 @@
     
     authorizeWithGithub();
     
-  }
+  };
   
   var lighter_container;
   var litLighter = function() {
@@ -197,11 +197,11 @@
         deps = null;
     }
 
-    var storelit = function(name, lit_pack_json) {
+    var storelit = function(moduleName, litPack) {
 
       var data = new FormData();
-      data.append('name', name);
-      data.append('lit_pack_json', lit_pack_json);
+      data.append('moduleName', moduleName);
+      data.append('litPack', litPack);
 
       var xhr = new XMLHttpRequest();
       xhr.open('POST', host_url + "/v0", true);
@@ -237,19 +237,21 @@
   
   lit.test = function(test_definition, callback) {
     
-    var litName;
+    var moduleName;
     if (test_definition["for"].indexOf("/") > -1) {
-      litName = test_definition["for"].split("/")[1];
+      moduleName = test_definition["for"].split("/")[1];
     }
     else {
-      litName = test_definition["for"];
+      moduleName = test_definition["for"];
     }
     
-    var testName = litName + "-test";
+    var testModuleName = moduleName + "-test";
     
-    lit({name: testName}, [], callback);
+    lit({name: testModuleName}, [], callback);
     
-    var pathName = window.location.pathname.split("/")[1] + "/" + litName;
+    var username = window.location.pathname.split("/")[1];
+    
+    var pathName = username + "/" + moduleName;
     
     require(["lit!" + pathName], callback);
     
@@ -263,7 +265,7 @@
   
   lit.hide = function() {
     lighter_container.style.display = 'none';
-  }
+  };
   
   root.lit = lit;
   
