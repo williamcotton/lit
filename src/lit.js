@@ -7,17 +7,27 @@
   var status = [];
   var errors = [];
   
-  var username = function() {
-    var return_val;
+  var getCookie = function(key) {
+    var v;
     document.cookie.split(";").forEach(function(c) { 
-      var cookie = c.replace(" ","").split("=");
-      var key = cookie[0];
-      var val = cookie[1];
-      if (key == "lit!username") {
-        return_val = val;
+      var kv = c.replace(" ","").split("=");
+      if (kv[0] == key) {
+        v = kv[1];
       }
     });
-    return return_val;
+    return decodeURIComponent(v);
+  }
+  
+  var username = function() {
+    return getCookie("lit!username");
+  };
+  
+  var avatar_url = function() {
+    return getCookie("lit!avatar_url");
+  };
+  
+  var last_login_timestamp = function() {
+    return getCookie("lit!last_login_timestamp");
   };
   
   if (typeof(LIT_DEV) != "undefined") {
@@ -34,12 +44,15 @@
       var pollRequest = new XMLHttpRequest();
       pollRequest.open("get", url, true);
       pollRequest.onload = function(request) {
-        success(request);
-        clearInterval(pollInterval);
+        if (request.target.response) {
+          success(request);
+          clearInterval(pollInterval);
+        }
       };
       pollRequest.withCredentials = true;
       pollRequest.send();
-    }, 500);
+    }, 1200);
+    return pollInterval;l
   };
   
   define("lit", {
@@ -71,19 +84,32 @@
     document.head.appendChild(styles);
   };
   
+  var emitState = function (state) {
+    status.push(state);
+    emit("status", state);
+  }
+  
+  var emitError = function(error) {
+    errors.push(error);
+    emit("error", error);
+  }
+  
+  emitStoreReceipt = function (storeReceipt) {
+    published.push(storeReceipt);
+  }
+  
   var login = function() {
     
     var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
 
     var loginWithCode = function(code) {
       var url = host_url + '/oauth_token?code=' + code;
-      status.push({xhr:url});
+      emitState({loginWithCode:url});
       var loginRequest = new XMLHttpRequest();
       loginRequest.open("get", url, true);
       loginRequest.onload = function(request) {
-        var github_details = JSON.parse(request.target.response);
-        status.push({github_details:github_details});
-        lighter_container.classList.add("logged-in");
+        var loginReceipt = JSON.parse(request.target.response);
+        emitState({loginReceipt:loginReceipt});
       };
       loginRequest.withCredentials = true;
       loginRequest.send();
@@ -91,19 +117,22 @@
 
     var pollForOAuthCode = function() {
       var url = host_url + '/oauth_poll/' + secret_oauth_lookup;
-      status.push({poll_url:url});
-      pollUrl(url, function(request) {
+      emitState({pollForOAuthCode:url});
+      var pollInterval = pollUrl(url, function(request) {
         var code = request.target.response;
         if (code) {
           loginWithCode(code);
         }
       });
+      return pollInterval;
     };
 
-    var listenForWindowMessage = function() {
+    var listenForWindowMessage = function(callback) {
+      emitState({listenForWindowMessage:hostname});
       window.addEventListener('message', function (event) {
         var code = event.data;
         loginWithCode(code);
+        callback();
       });
     };
 
@@ -113,17 +142,17 @@
         '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
         '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
         '&scope=gist';
-      status.push({window_open:url});
+      emitState({openGithubOAuthWindow:url});
       window.open(url);
     };
 
     var authorizeWithGithub = function() {
       openGithubOAuthWindow();
+      var pollInterval = pollForOAuthCode();
       if (window.location.host == hostname) {
-        listenForWindowMessage();
-      }
-      else {
-        pollForOAuthCode();
+        listenForWindowMessage(function() {
+          clearInterval(pollInterval);
+        });
       }
     };
     
@@ -131,28 +160,75 @@
     
   };
   
-  var lighter_container;
-  var litLighter = function() {
+  var events = {};
+  var on = function(event, fct) {
+    events[event] = events[event] || [];
+    events[event].push(fct);
+  }
+  var emit = function(event) {
+    if (event in events === false) return;
+    for (var i = 0; i < events[event].length; i++) {
+      events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+    }
+  }
+  
+  var test = function(test_definition, callback) {
     
-    appendStyleSheet(host_url + "/styles/lighter.css");
-    appendStyleSheet(host_url + "/styles/cleanslate.css");
+    var moduleName;
+    if (test_definition["for"].indexOf("/") > -1) {
+      moduleName = test_definition["for"].split("/")[1];
+    }
+    else {
+      moduleName = test_definition["for"];
+    }
     
-    lighter_container = document.createElement("div");
-    lighter_container.classList.add("lighter-container");
-    lighter_container.classList.add("cleanslate");
-    document.body.appendChild(lighter_container);
+    var testModuleName = moduleName + "-test";
     
-    var authorize_button = document.createElement("div");
-    authorize_button.classList.add("login");
-    lighter_container.appendChild(authorize_button);
+    var username = window.location.pathname.split("/")[1];
     
-    var status_display = document.createElement("div");
-    status_display.classList.add("status");
-    lighter_container.appendChild(status_display);
+    var pathName = username + "/" + moduleName;
     
-    authorize_button.addEventListener("click", function() {
-      lit.login();
-    });
+    lit({name: testModuleName}, ["lit!" + pathName], callback);
+    
+  };
+  
+  var load = function(litPath, callback) {
+    
+    var litModule = litPath.split("/")[1];
+    
+    var url = host_url + "/v0/" + litPath;
+    
+    var loader = function(request) {
+    
+      var code, demo_src, new_module;
+      if (!request.target.response) {
+        code = '\nlit({"name":"' + litModule + '"}, [], function() {\n\n\n\n});\n';
+        new_module = true;
+      }
+      else {
+        var lit_pack = JSON.parse(request.target.response);
+        var package_definition_json = lit_pack.package_definition;
+        var package_definition = JSON.parse(package_definition_json);
+        demo_src = package_definition.demo;
+        code = '\nlit(' + package_definition_json + ',' + JSON.stringify(lit_pack.deps) + ' , ' + lit_pack.callback + ');';
+        new_module = false;
+      }
+      
+      var codeLoad = {
+        code: code,
+        demo_src: demo_src,
+        package_definition: package_definition,
+        new_module: new_module
+      };
+      
+      callback(codeLoad);
+
+    };
+
+    var dataRequest = new XMLHttpRequest();
+    dataRequest.open("get", url, true);
+    dataRequest.onload = loader;
+    dataRequest.send();
     
   };
 
@@ -206,10 +282,10 @@
       var xhr = new XMLHttpRequest();
       xhr.open('POST', host_url + "/v0", true);
       xhr.onload = function (res) {
-        published.push(res.target.response);
+        emitStoreReceipt(res.target.response);
       };
       xhr.onerror = function(error) {
-        errors.push(error);
+        emitError(error);
       };
       xhr.withCredentials = true;
       xhr.send(data);
@@ -235,40 +311,59 @@
 
   };
   
-  lit.test = function(test_definition, callback) {
-    
-    var moduleName;
-    if (test_definition["for"].indexOf("/") > -1) {
-      moduleName = test_definition["for"].split("/")[1];
-    }
-    else {
-      moduleName = test_definition["for"];
-    }
-    
-    var testModuleName = moduleName + "-test";
-    
-    lit({name: testModuleName}, [], callback);
-    
-    var username = window.location.pathname.split("/")[1];
-    
-    var pathName = username + "/" + moduleName;
-    
-    require(["lit!" + pathName], callback);
-    
-  };
+
+  
   
   lit.published = published;
   lit.status = status;
   lit.errors = errors;
-  
+  lit.host_url = host_url;
   lit.login = login;
-  
-  lit.hide = function() {
-    lighter_container.style.display = 'none';
-  };
+  lit.test = test;
+  lit.username = username;
+  lit.avatar_url = avatar_url;
+  lit.last_login_timestamp = last_login_timestamp;
+  lit.load = load;
+  lit.on = on;
   
   root.lit = lit;
   
-  litLighter();
+  
+  
+  
+  /*
+  
+    Get this junk out of here!!!
+  
+  */
+  
+  // var lighter_container;
+  // var hide = function() {
+  //   lighter_container.style.display = 'none';
+  // };
+  // var litLighter = function() {
+  //   
+  //   appendStyleSheet(host_url + "/styles/lighter.css");
+  //   appendStyleSheet(host_url + "/styles/cleanslate.css");
+  //   
+  //   lighter_container = document.createElement("div");
+  //   lighter_container.classList.add("lighter-container");
+  //   lighter_container.classList.add("cleanslate");
+  //   document.body.appendChild(lighter_container);
+  //   
+  //   var authorize_button = document.createElement("div");
+  //   authorize_button.classList.add("login");
+  //   lighter_container.appendChild(authorize_button);
+  //   
+  //   var status_display = document.createElement("div");
+  //   status_display.classList.add("status");
+  //   lighter_container.appendChild(status_display);
+  //   
+  //   authorize_button.addEventListener("click", function() {
+  //     lit.login();
+  //   });
+  //   
+  // };
+  // litLighter();
   
 })(this);
