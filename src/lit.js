@@ -16,7 +16,7 @@
       }
     });
     return decodeURIComponent(v);
-  }
+  };
   
   var username = function() {
     return getCookie("lit!username");
@@ -52,7 +52,7 @@
       pollRequest.withCredentials = true;
       pollRequest.send();
     }, 1200);
-    return pollInterval;l
+    return pollInterval;
   };
   
   define("lit", {
@@ -87,16 +87,16 @@
   var emitState = function (state) {
     status.push(state);
     emit("status", state);
-  }
+  };
   
   var emitError = function(error) {
     errors.push(error);
     emit("error", error);
-  }
+  };
   
   emitStoreReceipt = function (storeReceipt) {
     published.push(storeReceipt);
-  }
+  };
   
   var login = function() {
     
@@ -164,13 +164,13 @@
   var on = function(event, fct) {
     events[event] = events[event] || [];
     events[event].push(fct);
-  }
+  };
   var emit = function(event) {
     if (event in events === false) return;
     for (var i = 0; i < events[event].length; i++) {
       events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
     }
-  }
+  };
   
   var test = function(test_definition, callback) {
     
@@ -192,6 +192,13 @@
     
   };
   
+  var newModule = function () {
+    var m = prompt("newModule:");
+    if (m) {
+      window.location.href = "/" + window.location.pathname.split("/")[1] + "/" + m; 
+    }
+  };
+  
   var load = function(litPath, callback) {
     
     var litModule = litPath.split("/")[1];
@@ -200,7 +207,7 @@
     
     var loader = function(request) {
     
-      var code, demo_src, new_module;
+      var code, demo_src, new_module, package_definition;
       if (!request.target.response) {
         code = '\nlit({"name":"' + litModule + '"}, [], function() {\n\n\n\n});\n';
         new_module = true;
@@ -208,7 +215,7 @@
       else {
         var lit_pack = JSON.parse(request.target.response);
         var package_definition_json = lit_pack.package_definition;
-        var package_definition = JSON.parse(package_definition_json);
+        package_definition = JSON.parse(package_definition_json);
         demo_src = package_definition.demo;
         code = '\nlit(' + package_definition_json + ',' + JSON.stringify(lit_pack.deps) + ' , ' + lit_pack.callback + ');';
         new_module = false;
@@ -324,6 +331,7 @@
   lit.avatar_url = avatar_url;
   lit.last_login_timestamp = last_login_timestamp;
   lit.load = load;
+  lit.newModule = newModule;
   lit.on = on;
   
   root.lit = lit;
