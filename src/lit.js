@@ -207,23 +207,28 @@
     
     var loader = function(request) {
     
-      var code, demo_src, new_module, package_definition;
+      var code, demo_src, new_module, package_definition, lit_pack;
       if (!request.target.response) {
         code = '\nlit({"name":"' + litModule + '"}, [], function() {\n\n\n\n});\n';
         new_module = true;
       }
       else {
-        var lit_pack = JSON.parse(request.target.response);
+        lit_pack = JSON.parse(request.target.response);
         var package_definition_json = lit_pack.package_definition;
         package_definition = JSON.parse(package_definition_json);
         demo_src = package_definition.demo;
-        code = '\nlit(' + package_definition_json + ',' + JSON.stringify(lit_pack.deps) + ' , ' + lit_pack.callback + ');';
+        var deps = lit_pack.deps || [];
+        deps.forEach(function(dep, i) {
+          deps[i] = dep.split("lit!")[1];
+        });
+        code = '\nlit(' + package_definition_json + ', ' + JSON.stringify(deps) + ', ' + lit_pack.callback + ');';
         new_module = false;
       }
       
       var codeLoad = {
         code: code,
         demo_src: demo_src,
+        lit_pack: lit_pack,
         package_definition: package_definition,
         new_module: new_module
       };
@@ -241,44 +246,79 @@
 
   var lit = function(package_definition, name, deps, callback) {
     
+    // this is a god damned mess
+    
+    var cleanDep = function(dep) {
+      var cleanedDep;
+      if (dep.indexOf("lit!") === 0) {
+        if (dep.indexOf("/") == -1) {
+          cleanedDep = "lit!" + username() + "/" + dep.split("lit!")[1];
+        }
+        else {
+          cleanedDep = dep;
+        }
+      }
+      else {
+        if (dep.indexOf("/") == -1) {
+          cleanedDep = "lit!" + username() + "/" + dep;
+        }
+        else {
+          cleanedDep = "lit!" + dep;
+        }
+      }
+      return cleanedDep;
+    };
+    
     if (typeof(package_definition) == "string") {
-      return require("lit!" + package_definition);
+      if (name && typeof(name) == "function") {
+        callback = name;
+        deps = [];
+        name = package_definition;
+      }
+      else if (!deps) {
+        var dep = package_definition;
+        dep = cleanDep(dep);
+        return require(dep);
+      }
+      else {
+        callback = deps;
+        deps = name;
+        name = package_definition;
+      }
     }
     
-    if (package_definition.length > 0) {
+    if (package_definition.length > 0 && package_definition.splice) {
       deps = package_definition;
       callback = name;
-      var new_deps = [];
-      deps.forEach(function(d) {
-        if (d.indexOf("/") == -1) {
-          d = username() + "/" + d;
-        }
-        new_deps.push("lit!" + d);
+      deps.forEach(function(dep, i) {
+        deps[i] = cleanDep(dep);
       });
-      return require(new_deps, callback);
-    }
-
-    if (typeof name !== 'string' && !!deps) {
-      // we need a name, due to issues with anonymously defined modules in requireJS
-      // which is fine, because lit's need a name as well!
-      define(package_definition.name, name, deps);
-    }
-    else {
-      define(name, deps, callback);
+      return require(deps, callback);
     }
 
     if (typeof name !== 'string') {
-        //Adjust args appropriately
         callback = deps;
         deps = name;
-        name = null;
+        name = package_definition.name;
     }
 
-    //This module may not have dependencies
     if (typeof(deps.sort) != "function") {
         callback = deps;
         deps = null;
     }
+    
+    if (deps) {
+      deps.forEach(function(dep, i) {
+        deps[i] = cleanDep(dep);
+      });
+    }
+    
+    package_definition = {};
+    package_definition.name = name;
+    
+    // All of this above stuff should be refactored based around "arguments"
+    
+    define(name, deps, callback);
 
     var storelit = function(moduleName, litPack) {
 
