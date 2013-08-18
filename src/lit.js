@@ -313,7 +313,10 @@
       });
     }
     
-    package_definition = {};
+    if (typeof(package_definition) != "object") {
+      package_definition = {};
+    }
+    
     package_definition.name = name;
     
     // All of this above stuff should be refactored based around "arguments"
