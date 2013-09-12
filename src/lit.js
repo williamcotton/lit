@@ -140,8 +140,7 @@
       var url = 'https://github.com' + 
         '/login/oauth/authorize' + 
         '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
-        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup +
-        '&scope=gist';
+        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup;
       emitState({openGithubOAuthWindow:url});
       window.open(url);
     };
