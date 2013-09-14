@@ -46,7 +46,7 @@
     // stub
     var allowedToPost = false;
     callback(allowedToPost);
-  }
+  };
   
   if (typeof(LIT_DEV) != "undefined") {
     host = "localhost:" + 5000;
@@ -83,7 +83,7 @@
       var initiated_callback = callback.apply(this, arguments);
       onload(initiated_callback);
     });
-  }
+  };
   
   define("lit", {
     load: function (name, req, onload, config) {
@@ -417,14 +417,13 @@
           var data = JSON.parse(json_data);
           var litPack = JSON.parse(data.litPack);
           var storeReceipt = data.storeReceipt;
+          emitStoreReceipt(storeReceipt);
           loadEvalLitPack(pathName, litPack, callback);
         }
       });
-    }
+    };
     
   }; connect();
-  
-  
   
   lit.subscribe = subscribe;
   lit.published = published;
@@ -441,43 +440,5 @@
   lit.on = on;
   
   root.lit = lit;
-  
-  
-  
-  
-  /*
-  
-    Get this junk out of here!!!
-  
-  */
-  
-  // var lighter_container;
-  // var hide = function() {
-  //   lighter_container.style.display = 'none';
-  // };
-  // var litLighter = function() {
-  //   
-  //   appendStyleSheet(host_url + "/styles/lighter.css");
-  //   appendStyleSheet(host_url + "/styles/cleanslate.css");
-  //   
-  //   lighter_container = document.createElement("div");
-  //   lighter_container.classList.add("lighter-container");
-  //   lighter_container.classList.add("cleanslate");
-  //   document.body.appendChild(lighter_container);
-  //   
-  //   var authorize_button = document.createElement("div");
-  //   authorize_button.classList.add("login");
-  //   lighter_container.appendChild(authorize_button);
-  //   
-  //   var status_display = document.createElement("div");
-  //   status_display.classList.add("status");
-  //   lighter_container.appendChild(status_display);
-  //   
-  //   authorize_button.addEventListener("click", function() {
-  //     lit.login();
-  //   });
-  //   
-  // };
-  // litLighter();
   
 })(this);
