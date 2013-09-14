@@ -74,19 +74,23 @@
     return pollInterval;
   };
   
+  var loadEvalLitPack = function(name, lit_pack, onload) {
+    var callback_string = lit_pack.callback;
+    var sourceMap = "//# sourceURL=" + name;
+    var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
+    var deps = lit_pack.deps;
+    require(deps, function() {
+      var initiated_callback = callback.apply(this, arguments);
+      onload(initiated_callback);
+    });
+  }
+  
   define("lit", {
     load: function (name, req, onload, config) {
       var dataRequest = new XMLHttpRequest();
       dataRequest.onload = function(request) {
         var lit_pack = JSON.parse(request.target.response);
-        var callback_string = lit_pack.callback;
-        var sourceMap = "//# sourceURL=" + name;
-        var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
-        var deps = lit_pack.deps;
-        require(deps, function() {
-          var initiated_callback = callback.apply(this, arguments);
-          onload(initiated_callback);
-        });
+        loadEvalLitPack(name, lit_pack, onload);
       };
       var url = host_url + "/v0/" + name;
       dataRequest.withCredentials = true;
@@ -391,27 +395,38 @@
 
   };
   
-  var wsServerUrl;
-  if (hostname == "localhost") {
-    wsServerUrl = "ws://localhost:8080";
-  }
-  else {
-    wsServerUrl = "ws://" + hostname + ":8080";
-  }
-  
-  var wss = new WebSocket(wsServerUrl);
-  
-  wss.addEventListener("open", function(evt) {
-    console.log("wss: open: ", evt);
-    wss.send("hi!");
+  var subscribe;
+  var connect = function() {
     
-    wss.addEventListener("message", function(evt) {
-      console.log("wss: message:", evt);
-    });
+    var wsServerUrl;
+    if (hostname == "localhost") {
+      wsServerUrl = "ws://localhost:8080";
+    }
+    else {
+      wsServerUrl = "ws://" + hostname + ":8080";
+    }  
+    var wss = new WebSocket(wsServerUrl);
+    wss.addEventListener("open");
     
-  });
+    subscribe = function(pathName, callback) {
+      wss.send("subscribe:" + pathName);
+      wss.addEventListener("message", function messageListener(evt) {
+        var evtDataSplit = evt.data.split(":");
+        if (evtDataSplit[0] == pathName) {
+          var json_data = evtDataSplit.splice(1,evtDataSplit.length).join(":");
+          var data = JSON.parse(json_data);
+          var litPack = JSON.parse(data.litPack);
+          var storeReceipt = data.storeReceipt;
+          loadEvalLitPack(pathName, litPack, callback);
+        }
+      });
+    }
+    
+  }; connect();
   
   
+  
+  lit.subscribe = subscribe;
   lit.published = published;
   lit.status = status;
   lit.errors = errors;
