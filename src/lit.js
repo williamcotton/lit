@@ -1,7 +1,16 @@
 (function(root) {
   
-  var hostname = "www.corslit.com";
+  var host = "www.corslit.com";
+  var hostname = host;
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
+  
+  var urlPathName = window.location.pathname;
+  var urlHost = window.location.host;
+  var urlHostName = window.location.hostname;
+  var pathUsername = urlPathName.split("/")[1];
+  
+  var sameOrigin = host == urlHost;
+  var crossOrigin = !sameOrigin;
   
   var published = [];
   var status = [];
@@ -30,12 +39,22 @@
     return getCookie("lit!last_login_timestamp");
   };
   
+  var sameAuthor = username() == pathUsername;
+  var crossAuthor = !sameAuthor;
+  
+  var crossAuthorPost = function(callback) {
+    // stub
+    var allowedToPost = false;
+    callback(allowedToPost);
+  }
+  
   if (typeof(LIT_DEV) != "undefined") {
-    hostname = "localhost:" + 5000;
+    host = "localhost:" + 5000;
+    hostname = "localhost";
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
   }
   
-  var host_url = "http://" + hostname;
+  var host_url = "http://" + host;
   
   root.LIT_HOSTNAME = host_url;
   
@@ -128,7 +147,7 @@
     };
 
     var listenForWindowMessage = function(callback) {
-      emitState({listenForWindowMessage:hostname});
+      emitState({listenForWindowMessage:host});
       window.addEventListener('message', function (event) {
         var code = event.data;
         loginWithCode(code);
@@ -148,7 +167,7 @@
     var authorizeWithGithub = function() {
       openGithubOAuthWindow();
       var pollInterval = pollForOAuthCode();
-      if (window.location.host == hostname) {
+      if (sameOrigin) {
         listenForWindowMessage(function() {
           clearInterval(pollInterval);
         });
@@ -183,9 +202,7 @@
     
     var testModuleName = moduleName + "-test";
     
-    var username = window.location.pathname.split("/")[1];
-    
-    var pathName = username + "/" + moduleName;
+    var pathName = pathUsername + "/" + moduleName;
     
     lit({name: testModuleName}, ["lit!" + pathName], callback);
     
@@ -194,7 +211,7 @@
   var newModule = function () {
     var m = prompt("newModule:");
     if (m) {
-      window.location.href = "/" + window.location.pathname.split("/")[1] + "/" + m; 
+      window.location.href = "/" + urlPathname.split("/")[1] + "/" + m; 
     }
   };
   
@@ -207,12 +224,15 @@
     var loader = function(request) {
     
       var code, demo_src, new_module, package_definition, lit_pack;
-      if (!request.target.response) {
+      
+      var response = request.target.response;
+      
+      if (!response) {
         code = '\nlit({"name":"' + litModule + '"}, [], function() {\n\n\n\n});\n';
         new_module = true;
       }
       else {
-        lit_pack = JSON.parse(request.target.response);
+        lit_pack = JSON.parse(response);
         var package_definition_json = lit_pack.package_definition;
         package_definition = JSON.parse(package_definition_json);
         demo_src = package_definition.demo;
@@ -327,6 +347,7 @@
       var data = new FormData();
       data.append('moduleName', moduleName);
       data.append('litPack', litPack);
+      data.append('urlPathName', urlPathName);
 
       var xhr = new XMLHttpRequest();
       xhr.open('POST', host_url + "/v0", true);
@@ -346,7 +367,17 @@
       deps: deps,
       callback: callback.toString()
     };
-    storelit(package_definition.name, JSON.stringify(lit_pack));
+    
+    if (crossAuthor) {
+      crossAuthorPost(function(allowedToPost) {
+        if (allowedToPost) {
+          storelit(package_definition.name, JSON.stringify(lit_pack));
+        }
+      });
+    }
+    else {
+      storelit(package_definition.name, JSON.stringify(lit_pack));
+    }
     
     var initiated_callback;
     
@@ -360,7 +391,25 @@
 
   };
   
-
+  var wsServerUrl;
+  if (hostname == "localhost") {
+    wsServerUrl = "ws://localhost:8080";
+  }
+  else {
+    wsServerUrl = "ws://" + hostname + ":8080";
+  }
+  
+  var wss = new WebSocket(wsServerUrl);
+  
+  wss.addEventListener("open", function(evt) {
+    console.log("wss: open: ", evt);
+    wss.send("hi!");
+    
+    wss.addEventListener("message", function(evt) {
+      console.log("wss: message:", evt);
+    });
+    
+  });
   
   
   lit.published = published;
