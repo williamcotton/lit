@@ -44,6 +44,12 @@
   
   var crossAuthorPost = function(callback) {
     // stub
+    
+    /*
+    
+      Spec: display an iframe that requires user input to verify a cross-author or cross-domain publish
+    
+    */
     var allowedToPost = false;
     callback(allowedToPost);
   };
@@ -395,9 +401,9 @@
 
   };
   
-  var subscribe;
-  var connect = function() {
-    
+  var subscribe = function() { return false; };
+  
+  var connectWebSocket = function() {
     var wsServerUrl;
     if (hostname == "localhost") {
       wsServerUrl = "ws://localhost:8080";
@@ -407,11 +413,11 @@
     }  
     var wss = new WebSocket(wsServerUrl);
     wss.addEventListener("open");
-    
-    subscribe = function(pathName, callback) {
+    lit.subscribe = function(pathName, callback) {
       wss.send("subscribe:" + pathName);
       wss.addEventListener("message", function messageListener(evt) {
-        var evtDataSplit = evt.data.split(":");
+        var data = evt.data;
+        var evtDataSplit = data.split(":");
         if (evtDataSplit[0] == pathName) {
           var json_data = evtDataSplit.splice(1,evtDataSplit.length).join(":");
           var data = JSON.parse(json_data);
@@ -421,10 +427,28 @@
           loadEvalLitPack(pathName, litPack, callback);
         }
       });
+      return true;
     };
-    
-  }; connect();
+  };
   
+  var connectFirebase = function() {
+    require(["https://cdn.firebase.com/v0/firebase.js"], function() { 
+      lit.subscribe = function(pathName, callback) {
+        var myDataRef = new Firebase('https://lit-store.firebaseio.com/' + pathName);
+        myDataRef.on("value", function(snapshot) {
+          var data = JSON.parse(snapshot.val());
+          var litPack = JSON.parse(data.litPack);
+          var storeReceipt = data.storeReceipt;
+          emitStoreReceipt(storeReceipt);
+          loadEvalLitPack(pathName, litPack, callback);
+        });
+        return true;
+      };
+    });
+  }; connectFirebase();
+  
+  lit.connectWebSocket = connectWebSocket();
+  lit.connectFirebase = connectFirebase();
   lit.subscribe = subscribe;
   lit.published = published;
   lit.status = status;
