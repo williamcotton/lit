@@ -326,14 +326,14 @@
     }
 
     if (typeof name !== 'string') {
-        callback = deps;
-        deps = name;
-        name = package_definition.name;
+      callback = deps;
+      deps = name;
+      name = package_definition.name;
     }
 
     if (typeof(deps.sort) != "function") {
-        callback = deps;
-        deps = null;
+      callback = deps;
+      deps = null;
     }
     
     if (deps) {
@@ -401,6 +401,20 @@
 
   };
   
+  processIncomingSubscriptionData = function(json_data, pathName, callback) {
+    var data = JSON.parse(json_data);
+    emitStoreReceipt(data.storeReceipt);
+    loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
+  }
+  
+  tempObj = function(nullFunctionsList) {
+    var obj = {};
+    for (var i = 0; i < nullFunctionsList.length; i++) {
+      obj[nullFunctionsList[i]] = function() {};
+    }
+    return obj;
+  }
+  
   var connectWebSocket = function() {
     var wsServerUrl;
     if (hostname == "localhost") {
@@ -411,33 +425,37 @@
     }
     var wss = new WebSocket(wsServerUrl);
     wss.addEventListener("open");
-    lit.subscribe = function(pathName, callback) {
-      lit([pathName], callback);
+    lit.subscribe = function(pathName, callback, nullFunctionsList) {
       wss.send("subscribe:" + pathName);
       wss.addEventListener("message", function messageListener(evt) {
         var data = evt.data;
         var evtDataSplit = data.split(":");
         if (evtDataSplit[0] == pathName) {
-          var json_data = evtDataSplit.splice(1,evtDataSplit.length).join(":");
-          var data = JSON.parse(json_data);
-          emitStoreReceipt(data.storeReceipt);
-          loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
+          processIncomingSubscriptionData(evtDataSplit.splice(1,evtDataSplit.length).join(":"));
         }
       });
-      return true;
+      if (nullFunctionsList) {
+        return tempObj(nullFunctionsList);
+      }
+      else {
+        return lit([pathName], callback)();
+      }
     };
   };
   
   var connectFirebase = function() {
     require(["https://cdn.firebase.com/v0/firebase.js"], function() { 
-      lit.subscribe = function(pathName, callback) {
-        var myDataRef = new Firebase('https://lit-store.firebaseio.com/' + pathName);
-        myDataRef.on("value", function(snapshot) {
-          var data = JSON.parse(snapshot.val());
-          emitStoreReceipt(data.storeReceipt);
-          loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
+      lit.subscribe = function(pathName, callback, nullFunctionsList) {
+        var fb = new Firebase('https://lit-store.firebaseio.com/' + pathName);
+        fb.on("value", function(snapshot) {
+          processIncomingSubscriptionData(snapshot.val(), pathName, callback);
         });
-        return true;
+        if (nullFunctionsList) {
+          return tempObj(nullFunctionsList);
+        }
+        else {
+          return lit(pathName);
+        }
       };
     });
   }; 
