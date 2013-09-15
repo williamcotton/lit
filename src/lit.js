@@ -401,8 +401,6 @@
 
   };
   
-  var subscribe = function() { return false; };
-  
   var connectWebSocket = function() {
     var wsServerUrl;
     if (hostname == "localhost") {
@@ -410,10 +408,11 @@
     }
     else {
       wsServerUrl = "ws://" + hostname + ":8080";
-    }  
+    }
     var wss = new WebSocket(wsServerUrl);
     wss.addEventListener("open");
     lit.subscribe = function(pathName, callback) {
+      lit([pathName], callback);
       wss.send("subscribe:" + pathName);
       wss.addEventListener("message", function messageListener(evt) {
         var data = evt.data;
@@ -421,10 +420,8 @@
         if (evtDataSplit[0] == pathName) {
           var json_data = evtDataSplit.splice(1,evtDataSplit.length).join(":");
           var data = JSON.parse(json_data);
-          var litPack = JSON.parse(data.litPack);
-          var storeReceipt = data.storeReceipt;
-          emitStoreReceipt(storeReceipt);
-          loadEvalLitPack(pathName, litPack, callback);
+          emitStoreReceipt(data.storeReceipt);
+          loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
         }
       });
       return true;
@@ -437,19 +434,23 @@
         var myDataRef = new Firebase('https://lit-store.firebaseio.com/' + pathName);
         myDataRef.on("value", function(snapshot) {
           var data = JSON.parse(snapshot.val());
-          var litPack = JSON.parse(data.litPack);
-          var storeReceipt = data.storeReceipt;
-          emitStoreReceipt(storeReceipt);
-          loadEvalLitPack(pathName, litPack, callback);
+          emitStoreReceipt(data.storeReceipt);
+          loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
         });
         return true;
       };
     });
-  }; connectFirebase();
+  }; 
   
-  lit.connectWebSocket = connectWebSocket();
-  lit.connectFirebase = connectFirebase();
-  lit.subscribe = subscribe;
+  if (typeof(LIT_DEV) != "undefined") {
+    connectWebSocket();
+  }
+  else {
+    connectFirebase();
+  }
+  
+  lit.connectWebSocket = connectWebSocket;
+  lit.connectFirebase = connectFirebase;
   lit.published = published;
   lit.status = status;
   lit.errors = errors;
