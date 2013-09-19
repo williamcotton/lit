@@ -405,15 +405,16 @@
     var data = JSON.parse(json_data);
     emitStoreReceipt(data.storeReceipt);
     loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
-  }
+  };
   
   tempObj = function(nullFunctionsList) {
     var obj = {};
+    var null_func = function() {};
     for (var i = 0; i < nullFunctionsList.length; i++) {
-      obj[nullFunctionsList[i]] = function() {};
+      obj[nullFunctionsList[i]] = null_func;
     }
     return obj;
-  }
+  };
   
   var connectWebSocket = function() {
     var wsServerUrl;
@@ -424,7 +425,7 @@
       wsServerUrl = "ws://" + hostname + ":8080";
     }
     var wss = new WebSocket(wsServerUrl);
-    wss.addEventListener("open");
+    wss.addEventListener("open", function() {});
     lit.subscribe = function(pathName, callback, nullFunctionsList) {
       wss.send("subscribe:" + pathName);
       wss.addEventListener("message", function messageListener(evt) {
@@ -438,7 +439,7 @@
         return tempObj(nullFunctionsList);
       }
       else {
-        return lit([pathName], callback)();
+        return lit(pathName);
       }
     };
   };
