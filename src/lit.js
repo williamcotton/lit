@@ -272,106 +272,127 @@
     dataRequest.send();
     
   };
+  
+  function typeParseArguments(args) {
 
-  var lit = function(package_definition, name, deps, callback) {
-    
-    // this is a god damned mess
-    
-    var cleanDep = function(dep) {
-      var cleanedDep;
-      if (dep.indexOf("lit!") === 0) {
-        if (dep.indexOf("/") == -1) {
-          cleanedDep = "lit!" + username() + "/" + dep.split("lit!")[1];
+    var string, array, object, func;
+
+    for (var i = 0; i < args.length; i++) {
+      var arg = args[i];
+      if (typeof(arg) == "string") {
+        string = arg;
+      }
+      if (typeof(arg) == "function") {
+        func = arg;
+      }
+      if (typeof(arg) == "object") {
+        if (typeof((arg).indexOf) == "function") {
+          array = arg;
         }
         else {
-          cleanedDep = dep;
+          object = arg;
         }
       }
-      else {
-        if (dep.indexOf("/") == -1) {
-          cleanedDep = "lit!" + username() + "/" + dep;
-        }
-        else {
-          cleanedDep = "lit!" + dep;
-        }
-      }
-      return cleanedDep;
+    }
+
+    return {
+      string: string,
+      array: array,
+      object: object,
+      func: func
     };
-    
-    if (typeof(package_definition) == "string") {
-      if (name && typeof(name) == "function") {
-        callback = name;
-        deps = [];
-        name = package_definition;
-      }
-      else if (!deps) {
-        var dep = package_definition;
-        dep = cleanDep(dep);
-        return require(dep);
+
+  }
+  
+  var cleanDep = function(dep) {
+    var cleanedDep;
+    if (dep.indexOf("lit!") === 0) {
+      if (dep.indexOf("/") == -1) {
+        cleanedDep = "lit!" + username() + "/" + dep.split("lit!")[1];
       }
       else {
-        callback = deps;
-        deps = name;
-        name = package_definition;
+        cleanedDep = dep;
+      }
+    }
+    else {
+      if (dep.indexOf("/") == -1) {
+        cleanedDep = "lit!" + username() + "/" + dep;
+      }
+      else {
+        cleanedDep = "lit!" + dep;
+      }
+    }
+    return cleanedDep;
+  };
+  
+  var storelit = function(moduleName, litPack) {
+
+    var data = new FormData();
+    data.append('moduleName', moduleName);
+    data.append('litPack', litPack);
+    data.append('urlPathName', urlPathName);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', host_url + "/v0", true);
+    xhr.onload = function (res) {
+      if (res.target.status == 201) {
+        emitStoreReceipt(res.target.response);
+      }
+      if (res.target.status == 202) {
+        emitState({
+          message: res.target.response,
+          moduleName: moduleName
+        });
+      }
+      
+    };
+    xhr.onerror = function(error) {
+      emitError(error);
+    };
+    xhr.withCredentials = true;
+    xhr.send(data);
+
+  };
+
+  var lit = function() {
+    
+    var args, package_definition, name, deps, callback;
+
+    args = typeParseArguments(arguments); 
+
+    package_definition = args.object;
+    name = args.string;
+    deps = args.array;
+    callback = args.func;
+    
+    if ((name && !package_definition && !deps && !callback)) {
+      return require(cleanDep(name));
+    }
+    
+    if (deps && deps.length > 0) {
+      for (var i = 0; i < deps.length; i++) {
+        deps[i] = cleanDep(deps[i]);
       }
     }
     
-    if (package_definition.length > 0 && package_definition.splice) {
-      deps = package_definition;
-      callback = name;
-      deps.forEach(function(dep, i) {
-        deps[i] = cleanDep(dep);
-      });
+    if ((deps && !package_definition && !name)) {
       return require(deps, callback);
     }
-
-    if (typeof name !== 'string') {
-      callback = deps;
-      deps = name;
-      name = package_definition.name;
-    }
-
-    if (typeof(deps.sort) != "function") {
-      callback = deps;
-      deps = null;
-    }
     
-    if (deps) {
-      deps.forEach(function(dep, i) {
-        deps[i] = cleanDep(dep);
-      });
+    if (!package_definition) {
+      if (name) {
+        package_definition = {};
+        package_definition.name = name;
+      }
     }
-    
-    if (typeof(package_definition) != "object") {
-      package_definition = {};
+    else {
+      if (!name) {
+        name = package_definition.name;
+      }
     }
-    
-    package_definition.name = name;
-    
-    // All of this above stuff should be refactored based around "arguments"
     
     define(name, deps, callback);
-
-    var storelit = function(moduleName, litPack) {
-
-      var data = new FormData();
-      data.append('moduleName', moduleName);
-      data.append('litPack', litPack);
-      data.append('urlPathName', urlPathName);
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', host_url + "/v0", true);
-      xhr.onload = function (res) {
-        emitStoreReceipt(res.target.response);
-      };
-      xhr.onerror = function(error) {
-        emitError(error);
-      };
-      xhr.withCredentials = true;
-      xhr.send(data);
-
-    };
-
+    
     var lit_pack = {
       package_definition: JSON.stringify(package_definition),
       deps: deps,
@@ -401,17 +422,17 @@
 
   };
   
-  processIncomingSubscriptionData = function(json_data, pathName, callback) {
-    var data = JSON.parse(json_data);
+  processIncomingSubscriptionData = function(jsonData, pathName, callback) {
+    var data = JSON.parse(jsonData);
     emitStoreReceipt(data.storeReceipt);
     loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
   };
   
   tempObj = function(nullFunctionsList) {
     var obj = {};
-    var null_func = function() {};
+    var nullFunc = function() {};
     for (var i = 0; i < nullFunctionsList.length; i++) {
-      obj[nullFunctionsList[i]] = null_func;
+      obj[nullFunctionsList[i]] = nullFunc;
     }
     return obj;
   };
