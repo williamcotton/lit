@@ -125,6 +125,7 @@
   
   emitStoreReceipt = function (storeReceipt) {
     published.push(storeReceipt);
+    emit("published", storeReceipt);
   };
   
   var login = function() {
@@ -336,7 +337,7 @@
     xhr.open('POST', host_url + "/v0", true);
     xhr.onload = function (res) {
       if (res.target.status == 201) {
-        emitStoreReceipt(res.target.response);
+        emitStoreReceipt(JSON.parse(res.target.response));
       }
       if (res.target.status == 202) {
         emitState({
@@ -376,7 +377,30 @@
     }
     
     if ((deps && !package_definition && !name)) {
-      return require(deps, callback);
+      var isLoad = false;
+      var loadCount = 0;
+      var cb = function() {
+        var cbArgs = arguments;
+        for (var i = 0; i < cbArgs.length; i++) {
+          var arg = cbArgs[i];
+          if (typeof(arg.load) == "function") {
+            isLoad = true;
+            loadCount++;
+            var k = i;
+            arg.load(function() {
+              cbArgs[k] = arguments[0];
+              loadCount--;
+              if (loadCount === 0) {
+                initiated_callback = callback.apply(this, cbArgs);
+              }
+            });
+          }
+        }
+        if (!isLoad) {
+          initiated_callback = callback.apply(this, cbArgs);
+        } 
+      };
+      return require(deps, cb);
     }
     
     if (!package_definition) {
