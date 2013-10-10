@@ -83,7 +83,7 @@
   var loadEvalLitPack = function(name, lit_pack, onload) {
     var callback_string = lit_pack.callback;
     var sourceMap = "//# sourceURL=" + name;
-    var callback = eval("(\n\n\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
+    var callback = eval("(\n" + callback_string + ")" + sourceMap); // EVAL IS EVIL!
     var deps = lit_pack.deps;
     require(deps, function() {
       var initiated_callback = callback.apply(this, arguments);
