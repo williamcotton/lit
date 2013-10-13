@@ -230,14 +230,14 @@
     return '\nlit(' + litPack.package_definition + ', ' + JSON.stringify(litPack.deps) + ', ' + litPack.callback + ');\n';
   };
   
-  var newLitPack = function(litModule) {
+  var newLitPack = function(litModule, codeTemplate) {
     var package_definition = {
       "name": litModule
     };
     return {
       package_definition: JSON.stringify(package_definition),
       deps: [],
-      callback: "function() {\n\n\n\n}"
+      callback: "function() {\n\n"+codeTemplate+"\n\n}"
     };
   };
   
@@ -546,6 +546,7 @@
   lit.errors = errors;
   lit.host_url = host_url;
   lit.codeFromLitPack = codeFromLitPack;
+  lit.newLitPack = newLitPack;
   lit.login = login;
   lit.test = test;
   lit.username = username;
