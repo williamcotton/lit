@@ -226,6 +226,21 @@
     }
   };
   
+  var codeFromLitPack = function(litPack) {
+    return '\nlit(' + litPack.package_definition + ', ' + JSON.stringify(litPack.deps) + ', ' + litPack.callback + ');\n';
+  };
+  
+  var newLitPack = function(litModule) {
+    var package_definition = {
+      "name": litModule
+    };
+    return {
+      package_definition: JSON.stringify(package_definition),
+      deps: [],
+      callback: "function() {\n\n\n\n}"
+    };
+  };
+  
   var load = function(litPath, callback) {
     
     var litModule = litPath.split("/")[1];
@@ -239,11 +254,12 @@
       var response = request.target.response;
       
       if (!response) {
-        code = '\nlit({"name":"' + litModule + '"}, [], function() {\n\n\n\n});\n';
+        lit_pack = newLitPack(litModule);
         new_module = true;
       }
       else {
         lit_pack = JSON.parse(response);
+
         var package_definition_json = lit_pack.package_definition;
         package_definition = JSON.parse(package_definition_json);
         demo_src = package_definition.demo;
@@ -251,9 +267,15 @@
         deps.forEach(function(dep, i) {
           deps[i] = dep.split("lit!")[1];
         });
-        code = '\nlit(' + package_definition_json + ', ' + JSON.stringify(deps) + ', ' + lit_pack.callback + ');';
+        
         new_module = false;
       }
+      
+      code = codeFromLitPack(lit_pack);
+      
+      emitState({
+        currentLitPack: lit_pack
+      });
       
       var codeLoad = {
         code: code,
@@ -383,10 +405,11 @@
         var cbArgs = arguments;
         for (var i = 0; i < cbArgs.length; i++) {
           var arg = cbArgs[i];
-          if (typeof(arg.load) == "function") {
+          if (arg && typeof(arg.load) == "function") {
             isLoad = true;
             loadCount++;
             var k = i;
+            // er, well this doesn't work because of the lexical closure issue... duh, remove it (don't define a function in a loop!!!)
             arg.load(function() {
               cbArgs[k] = arguments[0];
               loadCount--;
@@ -426,6 +449,9 @@
     if (crossAuthor) {
       crossAuthorPost(function(allowedToPost) {
         if (allowedToPost) {
+          emitState({
+            currentLitPack: lit_pack
+          });
           storelit(package_definition.name, JSON.stringify(lit_pack));
         }
       });
@@ -519,6 +545,7 @@
   lit.status = status;
   lit.errors = errors;
   lit.host_url = host_url;
+  lit.codeFromLitPack = codeFromLitPack;
   lit.login = login;
   lit.test = test;
   lit.username = username;
