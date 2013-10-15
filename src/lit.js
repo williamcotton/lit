@@ -449,9 +449,6 @@
     if (crossAuthor) {
       crossAuthorPost(function(allowedToPost) {
         if (allowedToPost) {
-          emitState({
-            currentLitPack: lit_pack
-          });
           storelit(package_definition.name, JSON.stringify(lit_pack));
         }
       });
@@ -459,6 +456,10 @@
     else {
       storelit(package_definition.name, JSON.stringify(lit_pack));
     }
+    
+    emitState({
+      currentLitPack: lit_pack
+    });
     
     var initiated_callback;
     
