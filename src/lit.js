@@ -1,6 +1,8 @@
 (function(root) {
   
   var host = "www.corslit.com";
+  var read_host, write_host, login_host;
+  read_host = write_host = login_host = host;
   var hostname = host;
   var GITHUB_OAUTH_CLIENT_ID = "f497d63f8657e29d73cc";
   
@@ -54,13 +56,25 @@
     callback(allowedToPost);
   };
   
-  if (typeof(LIT_DEV) != "undefined") {
+  if (typeof(LIT_DEV) != "undefined") {    
     host = "localhost:" + 5000;
     hostname = "localhost";
     GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
+    if (typeof(LIT_WRITE_LOCAL) != "undefined" && LIT_WRITE_LOCAL) {   
+      write_host = host;
+    }
+    if (typeof(LIT_READ_LOCAL) != "undefined" && LIT_READ_LOCAL) {   
+      read_host = host;
+    }
+    if (typeof(LIT_LOGIN_LOCAL) != "undefined" && LIT_LOGIN_LOCAL) {   
+      login_host = host;
+    }
   }
   
   var host_url = "http://" + host;
+  var read_url = "http://" + read_host;
+  var write_url = "http://" + write_host;
+  var login_url = "http://" + login_host;
   
   root.LIT_HOSTNAME = host_url;
   
@@ -98,7 +112,7 @@
         var lit_pack = JSON.parse(request.target.response);
         loadEvalLitPack(name, lit_pack, onload);
       };
-      var url = host_url + "/v0/" + name;
+      var url = read_url + "/v0/" + name;
       dataRequest.withCredentials = true;
       dataRequest.open("get", url, true);
       dataRequest.send();
@@ -133,7 +147,7 @@
     var secret_oauth_lookup = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
 
     var loginWithCode = function(code) {
-      var url = host_url + '/oauth_token?code=' + code;
+      var url = login_url + '/oauth_token?code=' + code;
       emitState({loginWithCode:url});
       var loginRequest = new XMLHttpRequest();
       loginRequest.open("get", url, true);
@@ -146,7 +160,7 @@
     };
 
     var pollForOAuthCode = function() {
-      var url = host_url + '/oauth_poll/' + secret_oauth_lookup;
+      var url = login_url + '/oauth_poll/' + secret_oauth_lookup;
       emitState({pollForOAuthCode:url});
       var pollInterval = pollUrl(url, function(request) {
         var code = request.target.response;
@@ -170,7 +184,7 @@
       var url = 'https://github.com' + 
         '/login/oauth/authorize' + 
         '?client_id=' + GITHUB_OAUTH_CLIENT_ID +
-        '&redirect_uri=' + host_url + "/login/" + secret_oauth_lookup;
+        '&redirect_uri=' + login_url + "/login/" + secret_oauth_lookup;
       emitState({openGithubOAuthWindow:url});
       window.open(url);
     };
@@ -234,10 +248,17 @@
     var package_definition = {
       "name": litModule
     };
+    var code;
+    if (codeTemplate) {
+      code = "function() {\n\n"+codeTemplate+"\n\n}";
+    }
+    else {
+      code = "function() {\n\n\n\n}";
+    }
     return {
       package_definition: JSON.stringify(package_definition),
       deps: [],
-      callback: "function() {\n\n"+codeTemplate+"\n\n}"
+      callback: code
     };
   };
   
@@ -245,7 +266,7 @@
     
     var litModule = litPath.split("/")[1];
     
-    var url = host_url + "/v0/" + litPath;
+    var url = read_url + "/v0/" + litPath;
     
     var loader = function(request) {
     
@@ -356,7 +377,7 @@
     data.append('urlPathName', urlPathName);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', host_url + "/v0", true);
+    xhr.open('POST', write_url + "/v0", true);
     xhr.onload = function (res) {
       if (res.target.status == 201) {
         emitStoreReceipt(JSON.parse(res.target.response));
