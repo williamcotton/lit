@@ -369,6 +369,30 @@
     return cleanedDep;
   };
   
+  var buildlit = function(moduleName, key, version) {
+    
+    var data = new FormData();
+    data.append('moduleName', moduleName);
+    data.append('key', key);
+    data.append('version', version);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', write_url + "/v0/build", true);
+    xhr.onload = function (res) {
+      if (res.target.status == 201) {
+        emitState({
+          buildReceipt: JSON.parse(res.target.response)
+        });
+      }
+    };
+    xhr.onerror = function(error) {
+      emitError(error);
+    };
+    xhr.withCredentials = true;
+    xhr.send(data);
+    
+  };
+  
   var storelit = function(moduleName, litPack) {
 
     var data = new FormData();
@@ -431,6 +455,7 @@
             loadCount++;
             var k = i;
             // er, well this doesn't work because of the lexical closure issue... duh, remove it (don't define a function in a loop!!!)
+            // also this sucks and it should be based on Promises
             arg.load(function() {
               cbArgs[k] = arguments[0];
               loadCount--;
@@ -567,6 +592,7 @@
   lit.status = status;
   lit.errors = errors;
   lit.host_url = host_url;
+  lit.buildlit = buildlit;
   lit.codeFromLitPack = codeFromLitPack;
   lit.newLitPack = newLitPack;
   lit.login = login;
