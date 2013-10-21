@@ -369,7 +369,7 @@
     return cleanedDep;
   };
   
-  var buildlit = function(moduleName, key, version) {
+  var build = function(moduleName, key, version) {
     
     var data = new FormData();
     data.append('moduleName', moduleName);
@@ -592,7 +592,7 @@
   lit.status = status;
   lit.errors = errors;
   lit.host_url = host_url;
-  lit.buildlit = buildlit;
+  lit.build = build;
   lit.codeFromLitPack = codeFromLitPack;
   lit.newLitPack = newLitPack;
   lit.login = login;
