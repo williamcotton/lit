@@ -443,33 +443,10 @@
       }
     }
     
+    
+    
     if ((deps && !package_definition && !name)) {
-      var isLoad = false;
-      var loadCount = 0;
-      var cb = function() {
-        var cbArgs = arguments;
-        for (var i = 0; i < cbArgs.length; i++) {
-          var arg = cbArgs[i];
-          if (arg && typeof(arg.load) == "function") {
-            isLoad = true;
-            loadCount++;
-            var k = i;
-            // er, well this doesn't work because of the lexical closure issue... duh, remove it (don't define a function in a loop!!!)
-            // also this sucks and it should be based on Promises
-            arg.load(function() {
-              cbArgs[k] = arguments[0];
-              loadCount--;
-              if (loadCount === 0) {
-                initiated_callback = callback.apply(this, cbArgs);
-              }
-            });
-          }
-        }
-        if (!isLoad) {
-          initiated_callback = callback.apply(this, cbArgs);
-        } 
-      };
-      return require(deps, cb);
+      return require(deps, callback);
     }
     
     if (!package_definition) {
