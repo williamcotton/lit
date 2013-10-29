@@ -59,14 +59,14 @@
   if (typeof(LIT_DEV) != "undefined") {    
     host = "localhost:" + 5000;
     hostname = "localhost";
-    GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";
     if (typeof(LIT_WRITE_LOCAL) != "undefined" && LIT_WRITE_LOCAL) {   
       write_host = host;
     }
     if (typeof(LIT_READ_LOCAL) != "undefined" && LIT_READ_LOCAL) {   
       read_host = host;
     }
-    if (typeof(LIT_LOGIN_LOCAL) != "undefined" && LIT_LOGIN_LOCAL) {   
+    if (typeof(LIT_LOGIN_LOCAL) != "undefined" && LIT_LOGIN_LOCAL) {
+      GITHUB_OAUTH_CLIENT_ID = "b1f2f347b61ebc0794d0";  
       login_host = host;
     }
   }
@@ -234,9 +234,9 @@
   };
   
   var newModule = function () {
-    var m = prompt("newModule:");
-    if (m) {
-      window.location.href = "/" + urlPathname.split("/")[1] + "/" + m; 
+    var moduleName = prompt("newModule:");
+    if (moduleName) {
+      window.location.href = "/" + pathUsername + "/" + moduleName; 
     }
   };
   
@@ -393,6 +393,28 @@
     
   };
   
+  var fork = function(forkedFromPathName) {
+    
+    var data = new FormData();
+    data.append('forkedFromPathName', forkedFromPathName);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', write_url + "/v0/fork", true);
+    xhr.onload = function (res) {
+      if (res.target.status == 201) {
+        emitState({
+          forkReceipt: JSON.parse(res.target.response)
+        });
+      }
+    };
+    xhr.onerror = function(error) {
+      emitError(error);
+    };
+    xhr.withCredentials = true;
+    xhr.send(data);
+    
+  };
+  
   var storelit = function(moduleName, litPack) {
 
     var data = new FormData();
@@ -442,8 +464,6 @@
         deps[i] = cleanDep(deps[i]);
       }
     }
-    
-    
     
     if ((deps && !package_definition && !name)) {
       return require(deps, callback);
@@ -570,6 +590,7 @@
   lit.errors = errors;
   lit.host_url = host_url;
   lit.build = build;
+  lit.fork = fork;
   lit.codeFromLitPack = codeFromLitPack;
   lit.newLitPack = newLitPack;
   lit.login = login;
