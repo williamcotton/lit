@@ -137,7 +137,7 @@
     emit("error", error);
   };
   
-  emitStoreReceipt = function (storeReceipt) {
+  var emitStoreReceipt = function (storeReceipt) {
     published.push(storeReceipt);
     emit("published", storeReceipt);
   };
@@ -532,13 +532,13 @@
 
   };
   
-  processIncomingSubscriptionData = function(jsonData, pathName, callback) {
+  var processIncomingSubscriptionData = function(jsonData, pathName, callback) {
     var data = JSON.parse(jsonData);
     emitStoreReceipt(data.storeReceipt);
     loadEvalLitPack(pathName, JSON.parse(data.litPack), callback);
   };
   
-  tempObj = function(nullFunctionsList) {
+  var tempObj = function(nullFunctionsList) {
     var obj = {};
     var nullFunc = function() {};
     for (var i = 0; i < nullFunctionsList.length; i++) {
