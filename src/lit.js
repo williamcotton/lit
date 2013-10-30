@@ -384,6 +384,11 @@
           buildReceipt: JSON.parse(res.target.response)
         });
       }
+      if (res.target.status >= 400) {
+        emitError({
+          message: res.target.response
+        });
+      }
     };
     xhr.onerror = function(error) {
       emitError(error);
@@ -393,17 +398,24 @@
     
   };
   
-  var fork = function(forkedFromPathName) {
+  var fork = function(forkedFromPathName, moduleName) {
     
     var data = new FormData();
     data.append('forkedFromPathName', forkedFromPathName);
-
+    if (moduleName) {
+      data.append('moduleName', moduleName);
+    }
     var xhr = new XMLHttpRequest();
     xhr.open('POST', write_url + "/v0/fork", true);
     xhr.onload = function (res) {
       if (res.target.status == 201) {
         emitState({
           forkReceipt: JSON.parse(res.target.response)
+        });
+      }
+      if (res.target.status >= 400) {
+        emitError({
+          message: res.target.response
         });
       }
     };
@@ -434,7 +446,11 @@
           moduleName: moduleName
         });
       }
-      
+      if (res.target.status >= 400) {
+        emitError({
+          message: res.target.response
+        });
+      }
     };
     xhr.onerror = function(error) {
       emitError(error);
