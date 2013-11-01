@@ -1,5 +1,5 @@
-lit
-===
+lit is has left the building, I repeat, lit has left the building...
 
-A lightweight module repository.
---------------------------------
+...and is now hosting itself: http://www.corslit.com/williamcotton/lit
+
+Sorry git, but you're just not doing it for me anymore...
